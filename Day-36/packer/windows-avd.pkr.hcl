@@ -37,7 +37,7 @@ source "azure-arm" "windows-avd" {
   subscription_id = var.arm_subscription_id
 
   os_type   = "Windows"
-  vm_size  = "Standard_D2s_v4"
+  vm_size  = "Standard_B2s"
   location = "eastus"
 
   image_publisher = "MicrosoftWindowsDesktop"
