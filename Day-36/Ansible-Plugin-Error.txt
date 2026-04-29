@@ -1,0 +1,1 @@
+packer plugins install github.com/hashicorp/ansible

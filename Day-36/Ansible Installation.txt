@@ -1,0 +1,14 @@
+Install Ansible on Ubuntu
+
+Ansible (by Red Hat) is a configuration management & automation tool used in DevOps.
+
+Method 1: Install via APT (Recommended)
+🔹 Step 1: Update system
+sudo apt update
+🔹 Step 2: Install Ansible
+sudo apt install ansible -y
+🔹 Step 3: Verify installation
+ansible --version
+
+✔ You should see version details
+

@@ -1,0 +1,24 @@
+- name: Configure AVD Master Image
+  hosts: all
+  gather_facts: no
+  connection: winrm
+
+  vars:
+    ansible_winrm_transport: ntlm
+    ansible_winrm_server_cert_validation: ignore
+
+  tasks:
+    - name: Ensure Chocolatey is installed
+      win_chocolatey:
+        name: chocolatey
+        state: present
+
+    - name: Install Google Chrome
+      win_chocolatey:
+        name: googlechrome
+        state: present
+
+    - name: Create tools directory
+      win_file:
+        path: C:\Tools
+        state: directory

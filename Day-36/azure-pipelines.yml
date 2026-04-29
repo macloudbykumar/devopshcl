@@ -1,0 +1,103 @@
+trigger:
+- main
+
+pool:
+  name: demo
+
+variables:
+  TF_DIR: terraform
+  TF_VERSION: 1.6.6
+
+stages:
+
+# ===============================
+# Stage 1: Terraform Landing Zone
+# ===============================
+- stage: Terraform_LandingZone
+  displayName: "Terraform - Landing Zone"
+  jobs:
+  - job: terraform
+    displayName: "Deploy Landing Zone"
+    steps:
+    - task: AzureCLI@2
+      displayName: "Install Terraform & Apply"
+      inputs:
+        azureSubscription: AZURE-SC
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          set -e
+          terraform --version
+          cd $(TF_DIR)
+          terraform init
+          terraform apply -auto-approve
+
+# ===============================
+# Stage 2: Packer Image Build
+# ===============================
+- stage: Packer_Image
+  displayName: "Packer - Build Master Image"
+  jobs:
+  - job: packer
+    displayName: "Build Golden Image"
+    pool:
+      name: demo
+    steps:
+    - task: AzureCLI@2
+      displayName: "Run Packer Build with Service Principal"
+      inputs:
+        azureSubscription: AZURE-SC
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          set -e
+
+          # Export pipeline variables as environment variables for Packer
+          export ARM_CLIENT_ID=$(ARM_CLIENT_ID)
+          export ARM_CLIENT_SECRET=$(ARM_CLIENT_SECRET)
+          export ARM_TENANT_ID=$(ARM_TENANT_ID)
+          export ARM_SUBSCRIPTION_ID=$(ARM_SUBSCRIPTION_ID)
+
+          echo "ARM_CLIENT_ID is set to $ARM_CLIENT_ID"
+
+          cd packer
+          packer init -upgrade .
+          packer validate windows-avd.pkr.hcl
+          #packer build -var "client_id=$(ARM_CLIENT_ID)" -var "client_secret=$(ARM_CLIENT_SECRET)" -var "tenant_id=$(ARM_TENANT_ID)" -var "subscription_id=$(ARM_SUBSCRIPTION_ID)" windows-avd.pkr.hcl
+          packer build windows-avd.pkr.hcl
+
+# ===============================
+# Stage 3: Terraform AVD Deployment
+# ===============================
+- stage: Terraform_AVD
+  displayName: "Terraform - AVD Deployment"
+  dependsOn: Packer_Image
+  jobs:
+  - job: avd
+    displayName: "Deploy AVD"
+    steps:
+    - task: AzureCLI@2
+      displayName: "Install Terraform & Apply"
+      inputs:
+        azureSubscription: AZURE-SC
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          set -e
+          terraform --version
+          cd $(TF_DIR)
+          terraform init
+          terraform apply -auto-approve
+
+# ===============================
+# Stage 4: Notification
+# ===============================
+- stage: Notification
+  displayName: "Notification"
+  dependsOn: Terraform_AVD
+  condition: always()
+  jobs:
+  - job: notify
+    steps:
+    - script: |
+        echo "Pipeline status: $(Agent.JobStatus)"
