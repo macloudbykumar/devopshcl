@@ -1,0 +1,11 @@
+terraform init
+terraform plan
+terraform apply
+
+# Existing image needed what has been created by Packer:
+
+avd-image-1.0.0
+pkrvm4f9u3mg9iv
+Windows
+avd-demo-rg
+East US
