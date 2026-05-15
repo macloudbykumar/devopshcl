@@ -98,21 +98,41 @@ steps:
     scriptLocation: inlineScript
     inlineScript: |
 
-      echo "Fetching previous versions..."
+      echo "Getting latest secret version..."
 
-      OLD_VERSION=$(az keyvault secret list-versions \
+      # Get latest enabled version
+      LATEST_VERSION=$(az keyvault secret show \
         --vault-name $(KEY_VAULT_NAME) \
         --name $(SECRET_NAME) \
-        --query "[?attributes.enabled==\`true\`].id" -o tsv | tail -n 2 | head -n 1)
+        --query id -o tsv)
 
-      echo "Disabling old secret version: $OLD_VERSION"
+      echo "Latest active version:"
+      echo $LATEST_VERSION
 
-      az keyvault secret set-attributes \
-        --id $OLD_VERSION \
-        --enabled false
+      echo "Fetching all enabled versions..."
 
-      echo "Old secret disabled"
+      ALL_VERSIONS=$(az keyvault secret list-versions \
+        --vault-name $(KEY_VAULT_NAME) \
+        --name $(SECRET_NAME) \
+        --query "[?attributes.enabled==\`true\`].id" -o tsv)
 
+      echo "Looping through old versions..."
+
+      for VERSION in $ALL_VERSIONS
+      do
+          if [ "$VERSION" != "$LATEST_VERSION" ]; then
+
+              echo "Disabling OLD version:"
+              echo $VERSION
+
+              az keyvault secret set-attributes \
+                --id $VERSION \
+                --enabled false
+
+          fi
+      done
+
+      echo "Old secret versions disabled successfully"
 # 6. LOG ACTIVITY
 - script: |
     echo "========== CREDENTIAL ROTATION LOG =========="
