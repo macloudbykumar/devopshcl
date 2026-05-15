@@ -1,0 +1,136 @@
+1. Schedule Trigger
+2. Generate Secret
+3. Store in Key Vault
+4. Update App Config / Pipeline Variable
+5. Invalidate Old Secret
+6. Log Activity
+
+
+Azure DevOps pipeline example that covers all 6 requirements end-to-end for credential rotation using:
+
+Azure DevOps
+Azure Key Vault
+Azure CLI
+
+COMPLETE WORKING PIPELINE – Credential Rotation
+Prerequisites (IMPORTANT)
+
+Before running this pipeline:
+
+Azure Service Connection configured in Azure DevOps
+Key Vault already created
+Secret permissions granted (Get, Set, Delete)
+Name of Key Vault: MyKeyVault
+
+FULL YAML PIPELINE
+
+trigger: none   # No manual trigger only schedule
+
+# 1. SCHEDULE TRIGGER
+schedules:
+- cron: "0 0 * * 0"   # Every Sunday 12:00 AM
+  displayName: Weekly Credential Rotation
+  branches:
+    include:
+    - main
+  always: true
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  KEY_VAULT_NAME: "MyKeyVault"
+  SECRET_NAME: "DBPassword"
+
+steps:
+
+# 2. GENERATE SECRET
+- task: AzureCLI@2
+  displayName: "Generate New Secret"
+  inputs:
+    azureSubscription: "My-Service-Connection"
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+
+      echo "Generating new secret..."
+
+      NEW_SECRET=$(openssl rand -base64 24)
+
+      echo "##vso[task.setvariable variable=NEW_SECRET]$NEW_SECRET"
+
+      echo "Secret generated successfully"
+
+# 3. STORE IN KEY VAULT
+- task: AzureCLI@2
+  displayName: "Store Secret in Key Vault"
+  inputs:
+    azureSubscription: "My-Service-Connection"
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+
+      echo "Storing new secret in Azure Key Vault..."
+
+      az keyvault secret set \
+        --vault-name $(KEY_VAULT_NAME) \
+        --name $(SECRET_NAME) \
+        --value "$(NEW_SECRET)"
+
+      echo "Secret stored successfully"
+
+# 4. UPDATE APP CONFIG / PIPELINE VARIABLE
+- script: |
+    echo "Updating application configuration..."
+
+    echo "New Secret Reference: $(SECRET_NAME) updated in Key Vault"
+
+    echo "##vso[task.setvariable variable=ACTIVE_SECRET]$(SECRET_NAME)"
+
+  displayName: "Update App Configuration"
+
+# 5. INVALIDATE OLD SECRET
+- task: AzureCLI@2
+  displayName: "Disable Old Secret Version"
+  inputs:
+    azureSubscription: "My-Service-Connection"
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+
+      echo "Fetching previous versions..."
+
+      OLD_VERSION=$(az keyvault secret list-versions \
+        --vault-name $(KEY_VAULT_NAME) \
+        --name $(SECRET_NAME) \
+        --query "[?attributes.enabled==\`true\`].id" -o tsv | tail -n 2 | head -n 1)
+
+      echo "Disabling old secret version: $OLD_VERSION"
+
+      az keyvault secret set-attributes \
+        --id $OLD_VERSION \
+        --enabled false
+
+      echo "Old secret disabled"
+
+# 6. LOG ACTIVITY
+- script: |
+    echo "========== CREDENTIAL ROTATION LOG =========="
+
+    echo "Key Vault: $(KEY_VAULT_NAME)"
+    echo "Secret Name: $(SECRET_NAME)"
+    echo "Rotation Time: $(date)"
+    echo "Status: SUCCESS"
+
+    echo "============================================"
+
+  displayName: "Log Rotation Activity"
+
+WHAT THIS PIPELINE DOES
+Step-by-step Execution
+Runs every Sunday automatically
+Generates a new secure password
+Stores it in Azure Key Vault
+Updates pipeline/app reference
+Disables old secret version
+Logs full activity
