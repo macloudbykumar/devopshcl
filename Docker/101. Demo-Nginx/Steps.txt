@@ -1,0 +1,45 @@
+cd /opt
+mkdir DemoHelloWorld
+cd DemoHelloWorld
+
+#Create file Dockerfile
+
+cat << 'EOF' > Dockerfile
+FROM nginx:latest
+COPY . /usr/share/nginx/html
+EXPOSE 80
+EOF
+
+#Create file HelloWorld.html
+
+cat << 'EOF' > HelloWorld.html
+<html>
+<body>
+Hello World by Kumar!
+</body>
+</html>
+EOF
+
+docker build -t mynginx-image:v1.0.0 .
+
+docker ps
+
+docker images
+
+docker kill ae513a47849c 
+
+#kill the past process if any
+
+docker run -d -p 80:80 mynginx-image:v1.0.0
+
+http://40.76.48.188:80/HelloWorld.html
+
+http://IPaddress/HelloWorld.html
+
+sudo -i
+hostnamectl set-hostname dockerdemos
+exit
+
+docker system prune -a
+
+docker rmi $(docker images -a -q)
