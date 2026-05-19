@@ -1,0 +1,166 @@
+Step 1 — Create Project Directory
+
+cd /opt
+mkdir DemoHelloWorld
+cd DemoHelloWorld
+
+Step 2 — Create Dockerfile
+
+cat << 'EOF' > Dockerfile
+FROM nginx:latest
+
+COPY HelloWorld.html /usr/share/nginx/html/index.html
+
+EXPOSE 80
+EOF
+
+Step 3 — Create HTML File
+
+cat << 'EOF' > HelloWorld.html
+<html>
+<head>
+<title>Docker Demo</title>
+</head>
+
+<body style="background-color:black;color:lime;text-align:center;margin-top:100px;">
+<h1>Hello World by Kumar!</h1>
+<h2>Docker Nginx Demo Running Successfully 🚀</h2>
+</body>
+</html>
+EOF
+
+Step 4 — Build Docker Image
+
+docker build -t mynginx-image:v1.0.0 .
+
+Step 5 — Verify Docker Images
+docker images
+
+Step 6 — Check Running Containers
+docker ps
+
+Step 7 — Stop Old Container (If Running)
+docker kill <CONTAINER_ID>
+
+Example:
+
+docker kill ae513a47849c
+
+Step 8 — Run Docker Container
+docker run -d --name nginxdemo -p 80:80 mynginx-image:v1.0.0
+
+Step 9 — Verify Running Container
+docker ps
+
+Step 10 — Access Application in Browser
+Localhost
+http://localhost
+Server IP
+http://YOUR_SERVER_IP
+
+Example:
+
+http://40.76.48.188
+
+Step 11 — Check Container Logs
+docker logs nginxdemo
+
+Step 12 — Enter Running Container
+docker exec -it nginxdemo bash
+
+Step 13 — Rename Server Hostname (Optional)
+sudo -i
+hostnamectl set-hostname dockerdemos
+exit
+
+Step 14 — Remove Stopped Containers
+docker container prune -f
+
+Step 15 — Clean Unused Docker Resources
+docker system prune -a -f
+
+Step 16 — Remove All Docker Images
+
+⚠️ Warning: Removes all images.
+
+docker rmi $(docker images -aq) -f
+
+Step 17 — Login to Docker Hub
+docker login
+
+Enter:
+
+Docker Hub username
+Password
+
+Step 18 — Tag Image for Docker Hub
+
+Replace yourdockerhubusername
+
+docker tag mynginx-image:v1.0.0 yourdockerhubusername/mynginx-image:v1.0.0
+
+Step 19 — Push Image to Docker Hub
+docker push yourdockerhubusername/mynginx-image:v1.0.0
+
+Step 20 — Verify Image on Docker Hub
+
+Open:
+
+https://hub.docker.com/
+
+Step 21 — Pull Image from Docker Hub
+docker pull yourdockerhubusername/mynginx-image:v1.0.0
+
+Step 22 — Verify Pulled Images
+docker images
+
+Step 23 — Run Pulled Image
+docker run -it -d \
+--name nginxcontainer1 \
+-p 8081:80 \
+yourdockerhubusername/mynginx-image:v1.0.0
+
+Step 24 — Verify Running Containers
+docker ps
+
+Step 25 — Access Application
+http://localhost:8081
+
+OR
+
+http://SERVER_IP:8081
+Important Docker Commands
+Stop Container
+docker stop nginxcontainer1
+Start Container
+docker start nginxcontainer1
+Restart Container
+docker restart nginxcontainer1
+Remove Container
+docker rm -f nginxcontainer1
+Remove Image
+docker rmi yourdockerhubusername/mynginx-image:v1.0.0
+Verify Docker Environment
+Docker Version
+docker --version
+Docker Information
+docker info
+
+Final Architecture Flow
+HTML File
+   ↓
+Dockerfile
+   ↓
+Docker Build
+   ↓
+Docker Image
+   ↓
+Docker Run
+   ↓
+Container Running
+   ↓
+Push to Docker Hub
+   ↓
+Pull Anywhere
+   ↓
+Run Globall
