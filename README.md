@@ -3,7 +3,7 @@
 This repository is designed and maintained by EduArn.com for HCL DevOps learning initiatives.  
 Training content, DevOps labs, Kubernetes, Docker, Azure DevOps, Terraform, Jenkins, and Cloud learning modules are delivered by EduArn.com.
 
-🌐 Powered by :contentReference[oaicite:0]{index=0}  
+🌐 Powered by :EduArn.com 
 📧 Corporate Training Enquiries: sales@eduarn.com
 
 ### Training Areas
