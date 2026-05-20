@@ -1,0 +1,113 @@
+On ALL Nodes: 
+=============
+
+Pre-requisite:(On ALL Nodes)
+=============
+cpu -2 , ram -4gb
+Hostname resolve - /etc/hosts
+Ping the nodes and check it is reachable.
+yum install bind-utils -y
+swapoff -a
+vi /etc/fstab --> comment swap entry
+
+Docker Install:(On ALL Nodes)
+==============
+yum update -y
+systemctl disable firewalld
+systemctl stop firewalld
+vi /etc/selinux/config ---> disabled
+init 6
+yum install -y docker-ce-18.09.0-3.el7
+systemctl enable docker
+systemctl start docker
+systemctl status docker
+
+
+
+vi /etc/yum.repos.d/kubernetes.repo (On ALL Nodes)
+==============================================
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg
+        https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+
+==============================================
+(On ALL Nodes)
+yum install kubelet kubeadm kubectl -y 
+		(or)
+yum install kubelet-1.16.11-0 kubeadm-1.16.11-0 kubectl-1.16.11-0 -y
+
+
+systemctl enable kubelet (On ALL Nodes)
+systemctl start kubelet  (On ALL Nodes)
+
+
+(On ALL Nodes)
+vi /etc/sysctl.d/k8s.conf   
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+
+sysctl --system
+
+========================================================================
+
+In Master node: 
+===============
+
+
+kubeadm init --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address=192.168.139.129
+                                (OR)
+kubeadm init --kubernetes-version=v1.16.11 --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address=192.158.58.138
+
+				(OR)
+
+kubeadm init --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address=192.158.58.135 --ignore-preflight-errors=Hostname,SystemVerification,NumCPU
+
+In each worker nodes:
+===============
+
+kubeadm join 192.158.58.138:6443 --token 8xdq5p.7sv0tufs24rgjv2b --discovery-token-ca-cert-hash sha256:0321bbaecce644873e54a6dff570f93c0b6826e6953880728374bc2b5b41ce00
+
+In Master node:
+================
+As ROOT USER
+------------
+vi /etc/profile
+export KUBECONFIG=/etc/kubernetes/admin.conf
+
+source /etc/profile
+
+                (OR)
+
+ As NORMAL USER
+--------------- 
+ mkdir -p $HOME/.kube
+ cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+ chown $(id -u):$(id -g) $HOME/.kube/config
+-----------------------------------------------
+kubectl get nodes
+kubectl get pods --all-namespaces
+
+kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+===========================================================================================================
+
+deployment creation commandline
+
+kubectl run test --image nginx
+
+
+Config files
+=============
+
+[reset] unmounting mounted directories in "/var/lib/kubelet"
+[reset] deleting contents of stateful directories: [/var/lib/kubelet /etc/cni/net.d /var/lib/dockershim /var/run/kubernetes /var/lib/etcd]
+[reset] deleting contents of config directories: [/etc/kubernetes/manifests /etc/kubernetes/pki]
+[reset] deleting files: [/etc/kubernetes/admin.conf /etc/kubernetes/kubelet.conf /etc/kubernetes/bootstrap-kubelet.conf /etc/kubernetes/controller-manager.conf /etc/kubernetes/scheduler.conf]
+
+#####################################################################
+How to reset the master and nodes if IP address changed:
+kubeadm reset 
