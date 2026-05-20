@@ -1,0 +1,108 @@
+System Requirements
+
+Before starting:
+
+Minimum: 4 CPU cores
+RAM: 8 GB minimum (16 GB recommended)
+Disk: at least 20–40 GB free
+Linux recommended (Ubuntu 20.04+ ideal)
+
+GitLab is heavy — it will NOT run properly on low RAM.
+
+
+2. Install Docker
+
+On Ubuntu:
+
+sudo apt update
+sudo apt install -y docker.io
+sudo systemctl enable docker
+sudo systemctl start docker
+
+3. Create GitLab directories (persistent storage)
+sudo mkdir -p /srv/gitlab/config
+sudo mkdir -p /srv/gitlab/logs
+sudo mkdir -p /srv/gitlab/data
+
+Set permissions:
+
+sudo chmod -R 755 /srv/GitLab
+
+sudo docker run --detach \
+  --hostname gitlab.local \
+  --publish 443:443 \
+  --publish 80:80 \
+  --publish 2222:22 \
+  --name gitlab \
+  --restart always \
+  --volume /srv/gitlab/config:/etc/gitlab \
+  --volume /srv/gitlab/logs:/var/log/gitlab \
+  --volume /srv/gitlab/data:/var/opt/gitlab \
+  --shm-size 256m \
+  gitlab/gitlab-ce:latest
+
+
+After Container Starts
+
+Edit GitLab config:
+
+sudo docker exec -it gitlab bash
+
+Open config:
+
+vi /etc/gitlab/gitlab.rb
+
+Add/update:
+
+external_url 'http://YOUR_SERVER_IP'
+
+gitlab_rails['gitlab_shell_ssh_port'] = 2222
+
+Example:
+
+external_url 'http://192.168.1.10'
+
+gitlab_rails['gitlab_shell_ssh_port'] = 2222
+
+Save file.
+
+Reconfigure GitLab
+
+Inside container:
+
+gitlab-ctl reconfigure
+
+Wait until completed.
+
+Access GitLab
+
+Browser:
+
+http://YOUR_SERVER_IP
+Clone Repositories via SSH
+
+Get initial root password
+
+Run:
+
+sudo docker exec -it gitlab cat /etc/gitlab/initial_root_password
+
+
+Now clone using port 2222:
+
+git clone ssh://git@YOUR_SERVER_IP:2222/root/test.git
+
+Example:
+
+git clone ssh://git@192.168.1.10:2222/root/test.git
+Verify Running Container
+docker ps
+
+You should see:
+
+0.0.0.0:80->80/tcp
+0.0.0.0:443->443/tcp
+0.0.0.0:2222->22/tcp
+
+
+
